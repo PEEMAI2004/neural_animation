@@ -39,7 +39,7 @@ learning_rate = 10 ** learning_rate
 # image_size = st.slider('Image Size', 1, 28, 28)
 
 # User input for number of hidden layers
-num_layers = st.slider('Number of Hidden Layers', 1, 3, 1) + 1
+num_layers = st.slider('Number of Hidden Layers', 1, 9, 1) + 1
 
 image_size = 28
 # User input for number of nodes
@@ -133,33 +133,11 @@ if st.button('Start'):
     # col2.header('Biases')
     # col2.write(network[0].bias)
 
-    # Show Biases as a barchart using matplotlib.pyplot
-    st.title('Biases')
-    data = network[0].bias
-    data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
-    data = data.tolist()
-    data = [i[0] for i in data]  # Convert to 1D list
-
-    # Show Biases as a barchart using matplotlib.pyplot
-    fig, ax = plt.subplots(figsize=(10, 10))
-    # set title of each barchart
-    ax.set_title('Biases from input layer to first layer')
-    bars = ax.bar([str(i) for i in range(nodes)], data)
-
-    # Add labels to each bar
-    for bar in bars:
-        height = bar.get_height()
-        ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3), textcoords='offset points',
-                    ha='center', va='bottom')
-
-    st.pyplot(fig)
-
     # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
     # loop through every layer
-    st.title('Heatmap of Weights')
     for i, layer in enumerate(network):
         if hasattr(layer, 'weight'):
+            st.subheader('Heatmap of Weights from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
             if i == 0: # If first layer
                 data = layer.weight
                 data = data.reshape(nodes, image_size, image_size)  # Split data into nodes * image_size * image_size matrices
@@ -190,12 +168,34 @@ if st.button('Start'):
                 heatmap_data_list = heatmap_data.values.tolist()
                 heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(nodes) for l in range(nodes)]
 
-                # Show Weights as a heatmaps using matplotlib.pyplot
-                fig, ax = plt.subplots(figsize=(10, 10))
-                # set title of each heatmap
-                ax.set_title(f'Heatmap of Weights from layer {i/2} to layer {i/2+1}')
-                ax = sns.heatmap(heatmap_data, cmap='coolwarm')
-                st.pyplot(fig)
+            # Show Weights as a heatmaps using matplotlib.pyplot
+            fig, ax = plt.subplots(figsize=(10, 10))
+            # set title of each heatmap
+            ax.set_title(f'Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}')
+            ax = sns.heatmap(heatmap_data, cmap='coolwarm')
+            st.pyplot(fig)
+
+            # Show Biases as a barchart using matplotlib.pyplot
+            st.subheader('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
+            data = network[i].bias
+            data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
+            data = data.tolist()
+            data = [j[0] for j in data]  # Convert to 1D list
+
+            # Show Biases as a barchart using matplotlib.pyplot
+            fig, ax = plt.subplots(figsize=(10, 10))
+            # set title of each barchart
+            ax.set_title('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
+            bars = ax.bar([str(j) for j in range(nodes)], data)
+
+            # Add labels to each bar
+            for bar in bars:
+                height = bar.get_height()
+                ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                            xytext=(0, 3), textcoords='offset points',
+                            ha='center', va='bottom')
+
+            st.pyplot(fig)
 
 
         print(i)
