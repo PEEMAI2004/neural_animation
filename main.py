@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pyecharts import options as opts
 from pyecharts.charts import HeatMap
+import time
 
 def mse(y, y_pred):
     return np.mean(np.power(y - y_pred, 2))
@@ -36,41 +37,60 @@ learning_rate = st.slider('Learning Rate 10 power by', -6, 0, -2)
 learning_rate = 10 ** learning_rate
 # User input for size of image
 # image_size = st.slider('Image Size', 1, 28, 28)
+
+# User input for number of hidden layers
+num_layers = st.slider('Number of Hidden Layers', 1, 3, 1) + 1
+
 image_size = 28
+# User input for number of nodes
+# nodes = st.slider('Number of Nodes', 10, 16, 10)
+nodes = 10
 
 # User input for choice of activation function
 activation = st.selectbox('Activation Function', ['Tanh', 'ReLU', 'Sigmoid'])
 if activation == 'Tanh':
-    network = [Dense(image_size ** 2, 10), Tanh(), Dense(10, 10), Tanh()]
+    network = [Dense(image_size ** 2, nodes), Tanh()]
+    for _ in range(num_layers - 1):
+        network.append(Dense(nodes, nodes))
+        network.append(Tanh())
 elif activation == 'Sigmoid':
-    network = [Dense(image_size ** 2, 10), Sigmoid(), Dense(10, 10), Sigmoid()]
+    network = [Dense(image_size ** 2, nodes), Sigmoid()]
+    for _ in range(num_layers - 1):
+        network.append(Dense(nodes, nodes))
+        network.append(Sigmoid())
 else:
-    network = [Dense(image_size ** 2, 10), ReLU(), Dense(10, 10), ReLU()]
+    network = [Dense(image_size ** 2, nodes), ReLU()]
+    for _ in range(num_layers - 1):
+        network.append(Dense(nodes, nodes))
+        network.append(ReLU())
 
 # Add trend button to start
 if st.button('Start'):
+    start_time = time.time()
     # write error to .csv file
     with open('error.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Epoch', 'Error'])  # Write header row
-        for epoch in range(epochs):
+        # Train model
+        for epoch in range(epochs):# loop through each epoch
             err = 0
-            for x, y in zip(X, Y):
+            for x, y in zip(X, Y): # loop through each image and label
                 output = x
-                for layer in network:
+                # forward propagation
+                for layer in network: # loop through each layer
                     output = layer.forward(output)
-
-                y_true = np.eye(10)[y].T.reshape(-1, 1)
-                err += mse(y_true, output)
-                grad = mse_prime(y_true, output)
-
-                for layer in reversed(network):
+                # calculate error
+                y_true = np.eye(nodes)[y].T.reshape(-1, 1)
+                err += mse(y_true, output) 
+                grad = mse_prime(y_true, output) 
+                # back propagation
+                for layer in reversed(network): # loop through each layer in reverse order
                     grad = layer.backward(grad, learning_rate)
-
+            # calculate error rate
             err /= len(X)
-            print(f"epoch {epoch} error = {err}")
+            print(f"epoch {epoch} error = {err*100}%")
             # write error to .csv file with epoch number
-            writer.writerow([epoch, err])
+            writer.writerow([epoch, err*100])
         # close .csv file
         csvfile.close()   
 
@@ -79,7 +99,7 @@ if st.button('Start'):
     ax.plot(pd.read_csv('error.csv')['Error'], 'r', label='Error Rate')
     ax.set_title('Error Rate')
     ax.set_xlabel('Epochs')
-    ax.set_ylabel('Error')
+    ax.set_ylabel('Error percentage')
     ax.legend()
 
     # Show loss graph
@@ -93,7 +113,7 @@ if st.button('Start'):
             output = layer.forward(output)
         accuracy += (np.argmax(output) == y).mean()
     accuracy /= len(X)
-    st.write('Accuracy: ', round(accuracy * 100, 2), '%')
+    st.write('Avg. Accuracy: ', round(accuracy * 100, 2), '%')
 
     # Calculate loss of model
     loss = 0
@@ -101,7 +121,7 @@ if st.button('Start'):
         output = x
         for layer in network:
             output = layer.forward(output)
-        y_true = np.eye(10)[y].T.reshape(-1, 1)
+        y_true = np.eye(nodes)[y].T.reshape(-1, 1)
         loss += mse(y_true, output)
     loss /= len(X)
     st.write('Loss: ', round(loss, 2))
@@ -116,7 +136,7 @@ if st.button('Start'):
     # Show Biases as a barchart using matplotlib.pyplot
     st.title('Biases')
     data = network[0].bias
-    data = data.reshape(10, 1)  # Split 10 into 10 1x1 matrices
+    data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
     data = data.tolist()
     data = [i[0] for i in data]  # Convert to 1D list
 
@@ -124,7 +144,7 @@ if st.button('Start'):
     fig, ax = plt.subplots(figsize=(10, 10))
     # set title of each barchart
     ax.set_title('Biases from input layer to first layer')
-    bars = ax.bar([str(i) for i in range(10)], data)
+    bars = ax.bar([str(i) for i in range(nodes)], data)
 
     # Add labels to each bar
     for bar in bars:
@@ -134,27 +154,51 @@ if st.button('Start'):
                     ha='center', va='bottom')
 
     st.pyplot(fig)
-    
 
-    # Show Weights as a heatmaps using matplotlib.pyplot
+    # Show Weights as a heatmaps using matplotlib.pyplot from layer to node
+    # loop through every layer
     st.title('Heatmap of Weights')
-    data = network[0].weight
-    data = data.reshape(10, 28, 28)  # Split 7840 into 10 28x28 matrices
-    data = data.tolist()
+    for i, layer in enumerate(network):
+        if hasattr(layer, 'weight'):
+            if i == 0: # If first layer
+                data = layer.weight
+                data = data.reshape(nodes, image_size, image_size)  # Split data into nodes * image_size * image_size matrices
+                data = data.tolist()
+                # create heatmap for 1st layer to 2nd layer
+                for j in range(nodes):
+                    heatmap_data = pd.DataFrame(data[j])
+                    heatmap_data.columns = [str(k) for k in range(28)]  # Set column names as string numbers
+                    heatmap_data.index = [str(k) for k in range(28)]  # Set index names as string numbers
+                    heatmap_data_list = heatmap_data.values.tolist()
+                    heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(28) for l in range(28)]  # Adjust the range to 28
 
-    for i in range(10):
-        heatmap_data = pd.DataFrame(data[i])
-        heatmap_data.columns = [str(i) for i in range(28)]  # Set column names as string numbers
-        heatmap_data.index = [str(i) for i in range(28)]  # Set index names as string numbers
-        heatmap_data_list = heatmap_data.values.tolist()
-        heatmap_data_list = [[i, j, heatmap_data_list[i][j]] for i in range(28) for j in range(28)]  # Adjust the range to 28
+                    # Show Weights as a heatmaps using matplotlib.pyplot
+                    fig, ax = plt.subplots(figsize=(10, 10))
+                    # set title of each heatmap
+                    ax.set_title(f'Heatmap of Weights from layer {i} to node {j} in layer {i+1}')
+                    ax = sns.heatmap(heatmap_data, cmap='coolwarm')
+                    st.pyplot(fig)  
 
-        # Show Weights as a heatmaps using matplotlib.pyplot
-        fig, ax = plt.subplots(figsize=(10, 10))
-        # set title of each heatmap
-        ax.set_title(f'Heatmap of Weights from first layer to node {i} in second layer')
-        ax = sns.heatmap(heatmap_data, cmap='coolwarm')
-        st.pyplot(fig)    
+            else: # If not first layer, show heat map size of nodes * nodes
+                data = layer.weight
+                data = data.reshape(nodes, nodes)
+                data = data.tolist()
+                # create heatmap for Nnd layer to (N+1)rd layer
+                heatmap_data = pd.DataFrame(data)
+                heatmap_data.columns = [str(k) for k in range(nodes)]
+                heatmap_data.index = [str(k) for k in range(nodes)]
+                heatmap_data_list = heatmap_data.values.tolist()
+                heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(nodes) for l in range(nodes)]
+
+                # Show Weights as a heatmaps using matplotlib.pyplot
+                fig, ax = plt.subplots(figsize=(10, 10))
+                # set title of each heatmap
+                ax.set_title(f'Heatmap of Weights from layer {i/2} to layer {i/2+1}')
+                ax = sns.heatmap(heatmap_data, cmap='coolwarm')
+                st.pyplot(fig)
+
+
+        print(i)
 
 
     print("-" * 30 + "after trained" + "-" * 30)
@@ -166,3 +210,8 @@ if st.button('Start'):
         print(f"actual y = {y}")
         print(f"prediction = {np.argmax(output)}")
         print("-" * 50)
+
+    # Show time taken to train
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
