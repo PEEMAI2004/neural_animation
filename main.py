@@ -28,26 +28,53 @@ print(np.unique(Y))
 
 st.title('My Neural Network')
 st.subheader('Hello')
+st.subheader('Let\'s train a neural network to recognize handwritten digits!')
 
 # User input for number of epochs and hidden layers
+st.write('Select the number of epochs and hidden layers, More eppochs means more accurate but slower')
 epochs = st.slider('Number of Epochs 10 power by', 2, 4, 3)
 epochs = 10 ** epochs
+
 # User input for learning rate
+st.write('Select the learning rate, More learning rate means faster but less accurate')
 learning_rate = st.slider('Learning Rate 10 power by', -6, 0, -2)
 learning_rate = 10 ** learning_rate
-# User input for size of image
-# image_size = st.slider('Image Size', 1, 28, 28)
 
 # User input for number of hidden layers
+st.write('Select the number of hidden layers, More hidden layers means more accurate but slower')
 num_layers = st.slider('Number of Hidden Layers', 1, 9, 1) + 1
 
+# fix image size and number of nodes in each hidden layer
 image_size = 28
-# User input for number of nodes
-# nodes = st.slider('Number of Nodes', 10, 16, 10)
 nodes = 10
 
 # User input for choice of activation function
-activation = st.selectbox('Activation Function', ['Tanh', 'ReLU', 'Sigmoid'])
+st.write('Select the activation function, Tanh is the default')
+st.write('''
+## Activation Functions
+
+1. **Tanh (Hyperbolic Tangent):**
+   - Outputs values between -1 and 1.
+   - Symmetric around the origin.
+   - Smooth and differentiable.
+   - Often used in hidden layers of neural networks.
+
+2. **ReLU (Rectified Linear Unit):**
+   - Outputs the input directly if it is positive, otherwise outputs 0.
+   - Computationally efficient and helps alleviate the vanishing gradient problem.
+   - Introduces sparsity in the network by zeroing out negative values.
+   - Commonly used in hidden layers of deep neural networks.
+
+3. **Sigmoid:**
+   - Outputs values between 0 and 1.
+   - Maps the input to a probability-like output.
+   - Useful for binary classification problems.
+   - Suffers from the vanishing gradient problem for very large or small inputs.
+   - Often used in the output layer for binary classification tasks.
+''')
+
+
+activation = st.selectbox('Select Activation Function', ['Tanh', 'ReLU', 'Sigmoid'])
 if activation == 'Tanh':
     network = [Dense(image_size ** 2, nodes), Tanh()]
     for _ in range(num_layers - 1):
@@ -94,7 +121,8 @@ if st.button('Start'):
         # close .csv file
         csvfile.close()   
 
-    # Visualize accuracy and loss using matplotlib
+    # Visualize error using matplotlib
+    st.write('error rate was calculate by mean squared error (MSE) and the error rate is the average of all the MSE') 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(pd.read_csv('error.csv')['Error'], 'r', label='Error Rate')
     ax.set_title('Error Rate')
@@ -102,10 +130,12 @@ if st.button('Start'):
     ax.set_ylabel('Error percentage')
     ax.legend()
 
-    # Show loss graph
+    # Show error rate graph
     st.pyplot(fig)
 
     # Calculate accuracy of model
+    st.write('Accuracy is the percentage of correct predictions')
+    st.write('Accuracy = (number of correct predictions) / (total number of predictions)')
     accuracy = 0
     for x, y in zip(X, Y):
         output = x
@@ -116,6 +146,8 @@ if st.button('Start'):
     st.write('Avg. Accuracy: ', round(accuracy * 100, 2), '%')
 
     # Calculate loss of model
+    st.write('Loss is the average of all the mean squared error (MSE)')
+    st.write('Loss = (sum of all the MSE) / (total number of predictions)')
     loss = 0
     for x, y in zip(X, Y):
         output = x
@@ -139,6 +171,10 @@ if st.button('Start'):
         if hasattr(layer, 'weight'):
             st.subheader('Heatmap of Weights from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
             if i == 0: # If first layer
+                st.text('There is a total of {} nodes in layer {}. There is a total of {} nodes in layer {}'.format(image_size ** 2, int(i/2), nodes, int(i/2+1)))
+                st.text('So, there is a total of {} weights from layer {} to layer {}, \nbecause every nodes are connect together'.format(image_size ** 2 * nodes, int(i/2), int(i/2+1)))
+                st.text('Weights are use for adjusting the output of each node in the next layer')
+
                 data = layer.weight
                 data = data.reshape(nodes, image_size, image_size)  # Split data into nodes * image_size * image_size matrices
                 data = data.tolist()
@@ -163,6 +199,10 @@ if st.button('Start'):
                 st.pyplot(fig)
                 
             else: # If not first layer, show heat map size of nodes * nodes
+                st.text('There is a total of {} nodes in layer {}. There is a total of {} nodes in layer {}'.format(nodes, int(i/2), nodes, int(i/2+1)))
+                st.text('So, there is a total of {} weights from layer {} to layer {}, \nbecause every nodes are connect together'.format(nodes ** 2, int(i/2), int(i/2+1)))
+                st.text('Weights are use for adjusting the output of each node in the next layer')
+
                 data = layer.weight
                 data = data.reshape(nodes, nodes)
                 data = data.tolist()
@@ -174,14 +214,17 @@ if st.button('Start'):
                 heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(nodes) for l in range(nodes)]
 
                 # Show Weights as a heatmaps using matplotlib.pyplot
-                fig, ax = plt.subplots(figsize=(10, 10))
+                fig, ax = plt.subplots(figsize=(10, 5))
                 # set title of each heatmap
                 ax.set_title(f'Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}')
+                ax.set_aspect('equal')  # Set aspect ratio to make the heatmap square
                 ax = sns.heatmap(heatmap_data, cmap='coolwarm')
                 st.pyplot(fig)
 
             # Show Biases as a barchart using matplotlib.pyplot
             st.subheader('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
+            st.text('There is a total of {} biases from layer {} to layer {}'.format(nodes, int(i/2), int(i/2+1)))
+            st.text('Biases are use for adjusting the output of each node in the next layer')
             data = network[i].bias
             data = data.reshape(nodes, 1)  # Split 10 into 10 1x1 matrices
             data = data.tolist()
@@ -193,10 +236,16 @@ if st.button('Start'):
             ax.set_title('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
             bars = ax.bar([str(j) for j in range(nodes)], data)
 
-            # Add labels to each bar
+            # Color positive values blue and negative values red
             for bar in bars:
                 height = bar.get_height()
-                ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                if height > 0:
+                    bar.set_color('blue')
+                else:
+                    bar.set_color('red')
+
+                # Add labels to each bar
+                ax.annotate(f'{round(height, 2)}', xy=(bar.get_x() + bar.get_width() / 2, height),
                             xytext=(0, 3), textcoords='offset points',
                             ha='center', va='bottom')
 
