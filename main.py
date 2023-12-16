@@ -10,6 +10,8 @@ import seaborn as sns
 from pyecharts import options as opts
 from pyecharts.charts import HeatMap
 import time
+import networkx as nx
+import matplotlib.pyplot as plt
 
 def mse(y, y_pred):
     return np.mean(np.power(y - y_pred, 2))
@@ -28,7 +30,16 @@ print(np.unique(Y))
 
 st.title('My Neural Network')
 st.subheader('Hello')
-st.subheader('Let\'s train a neural network to recognize handwritten digits!')
+st.write('''
+## What is Neural Network ?
+
+A neural network is a series of algorithms that endeavors to recognize underlying relationships in a set of data through a process that mimics the way the human brain operates. In essence, neural networks are used to approximate functions that can depend on a large number of inputs and are generally unknown.
+
+Neural networks are a subset of machine learning and are at the heart of deep learning algorithms. They are called "neural" because they are designed to mimic neurons in the human brain. A neuron takes inputs, does some processing, and produces one output. Similarly, a neural network takes a set of inputs, processes them through hidden layers using weights that are adjusted during training, and outputs a prediction representing the combined input signal.
+
+The neural network in this app is being used to recognize handwritten digits, a classic problem in machine learning. The network is trained on a dataset of handwritten digits and their corresponding labels, and it learns to map the input images to the correct digit.
+''')
+st.subheader('This is a neural network that We made from scratch using Python and NumPy, Let\'s train a neural network to recognize handwritten digits!')
 
 # User input for number of epochs and hidden layers
 st.write('Select the number of epochs and hidden layers, More eppochs means more accurate but slower')
@@ -119,7 +130,31 @@ if st.button('Start'):
             # write error to .csv file with epoch number
             writer.writerow([epoch, err*100])
         # close .csv file
-        csvfile.close()   
+        csvfile.close()
+
+    # Create a graph object
+    G = nx.Graph()
+
+    # Add nodes to the graph
+    for i in range(len(network)):
+        G.add_node(i)
+
+    # Add edges between nodes
+    for i in range(len(network)-1):
+        G.add_edge(i, i+1)
+
+    # Draw the graph
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=1000, font_size=10, font_weight='bold')
+
+    # Save the image
+    plt.savefig('neural_network.png')
+
+    # Show the image
+    img = plt.imread('neural_network.png')
+    plt.imshow(img)
+    plt.axis('off')
+    plt.show()
 
     # Visualize error using matplotlib
     st.write('error rate was calculate by mean squared error (MSE) and the error rate is the average of all the MSE') 
