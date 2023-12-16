@@ -95,7 +95,7 @@ if st.button('Start'):
         csvfile.close()   
 
     # Visualize accuracy and loss using matplotlib
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(pd.read_csv('error.csv')['Error'], 'r', label='Error Rate')
     ax.set_title('Error Rate')
     ax.set_xlabel('Epochs')
@@ -143,6 +143,7 @@ if st.button('Start'):
                 data = data.reshape(nodes, image_size, image_size)  # Split data into nodes * image_size * image_size matrices
                 data = data.tolist()
                 # create heatmap for 1st layer to 2nd layer
+                fig, axs = plt.subplots(2, 5, figsize=(20, 10))
                 for j in range(nodes):
                     heatmap_data = pd.DataFrame(data[j])
                     heatmap_data.columns = [str(k) for k in range(28)]  # Set column names as string numbers
@@ -150,13 +151,17 @@ if st.button('Start'):
                     heatmap_data_list = heatmap_data.values.tolist()
                     heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(28) for l in range(28)]  # Adjust the range to 28
 
-                    # Show Weights as a heatmaps using matplotlib.pyplot
-                    fig, ax = plt.subplots(figsize=(10, 10))
-                    # set title of each heatmap
-                    ax.set_title(f'Heatmap of Weights from layer {i} to node {j} in layer {i+1}')
-                    ax = sns.heatmap(heatmap_data, cmap='coolwarm')
-                    st.pyplot(fig)  
+                    # Show Weights as square heatmaps using matplotlib.pyplot
+                    ax = axs[j % 2, j // 2]
+                    ax.set_title(f'layer {i} to node {j} in layer {i+1}')
+                    ax.set_aspect('equal')  # Set aspect ratio to make the heatmap square
+                    ax = sns.heatmap(heatmap_data, cmap='coolwarm', ax=ax, cbar=False)  # Hide color palette
+                # Add shared colorbar on RHS
+                cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # Define cbar_ax
+                fig.colorbar(ax.collections[0], cax=cbar_ax)
 
+                st.pyplot(fig)
+                
             else: # If not first layer, show heat map size of nodes * nodes
                 data = layer.weight
                 data = data.reshape(nodes, nodes)
@@ -168,12 +173,12 @@ if st.button('Start'):
                 heatmap_data_list = heatmap_data.values.tolist()
                 heatmap_data_list = [[k, l, heatmap_data_list[k][l]] for k in range(nodes) for l in range(nodes)]
 
-            # Show Weights as a heatmaps using matplotlib.pyplot
-            fig, ax = plt.subplots(figsize=(10, 10))
-            # set title of each heatmap
-            ax.set_title(f'Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}')
-            ax = sns.heatmap(heatmap_data, cmap='coolwarm')
-            st.pyplot(fig)
+                # Show Weights as a heatmaps using matplotlib.pyplot
+                fig, ax = plt.subplots(figsize=(10, 10))
+                # set title of each heatmap
+                ax.set_title(f'Heatmap of Weights from layer {int(i/2)} to layer {int(i/2+1)}')
+                ax = sns.heatmap(heatmap_data, cmap='coolwarm')
+                st.pyplot(fig)
 
             # Show Biases as a barchart using matplotlib.pyplot
             st.subheader('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
@@ -183,7 +188,7 @@ if st.button('Start'):
             data = [j[0] for j in data]  # Convert to 1D list
 
             # Show Biases as a barchart using matplotlib.pyplot
-            fig, ax = plt.subplots(figsize=(10, 10))
+            fig, ax = plt.subplots(figsize=(10, 5))
             # set title of each barchart
             ax.set_title('Biases from layer {} to layer {}'.format(int(i/2), int(i/2+1)))
             bars = ax.bar([str(j) for j in range(nodes)], data)
