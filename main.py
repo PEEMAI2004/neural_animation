@@ -13,6 +13,38 @@ import time
 import networkx as nx
 import matplotlib.pyplot as plt
 
+def draw_neural_net(layer_sizes):
+    '''
+    Draw a neural network cartoon using matplotlib and networkx.
+    
+    :param layer_sizes: list of layer sizes, including input and output dimensionality
+    '''
+    node_spacing= 1
+    # Create a new figure
+    G = nx.DiGraph()
+    for i in range(len(layer_sizes) - 1):       # loop through each layer
+        for j in range(layer_sizes[i]):         # loop through each node in the layer
+            for k in range(layer_sizes[i+1]):   # loop through each node in the next layer
+                if i == len(layer_sizes) - 2:   # check if it's the last layer
+                    G.add_edge((i,j), (i+1,k), color='g')  # add edge from node in layer i to node in layer i+1 with green color (hidden to output)
+                elif i == 0:                    # check if it's the first layer
+                    G.add_edge((i,j), (i+1,k), color='r')  # add edge from node in layer i to node in layer i+1 with red color (input to hidden)
+                else:
+                    G.add_edge((i,j), (i+1,k), color='b')  # add edge from node in layer i to node in layer i+1 with blue color (hidden to hidden)
+
+    pos = {} # position of each node
+    for i, layer_size in enumerate(layer_sizes): # loop through each layer
+        layer_height = (layer_size - 1) / 2.0 # calculate the height of the layer
+        for j in range(layer_size): # loop through each node in the layer
+            pos[(i, j)] = [i, layer_height - j * node_spacing] # set position of each node based on layer and index of node in layer
+
+    nx.draw(G, pos, with_labels=False, arrows=False, node_size=200, node_color='black', edge_color=[G[u][v]['color'] for u,v in G.edges()]) # draw the neural network with black node color
+    plt.title('Neural Network Graph')  # set the title of the plot
+    # plt.show() # display the plot of the neural network graph
+    st.set_option('deprecation.showPyplotGlobalUse', False) # disable warning
+    st.pyplot() # display the plot of the neural network graph 
+    st.write('This is a graph of the neural network, the red edges are the edges from the input layer to the hidden layer, the blue edges are the edges from the hidden layer to the hidden layer, and the green edges are the edges from the hidden layer to the output layer. ')
+
 def mse(y, y_pred):
     return np.mean(np.power(y - y_pred, 2))
 
@@ -132,33 +164,13 @@ if st.button('Start'):
         # close .csv file
         csvfile.close()
 
-    # Create a graph object
-    G = nx.Graph()
-
-    # Add nodes to the graph
-    for i in range(len(network)):
-        G.add_node(i)
-
-    # Add edges between nodes
-    for i in range(len(network)-1):
-        G.add_edge(i, i+1)
-
-    # Draw the graph
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=1000, font_size=10, font_weight='bold')
-
-    # Save the image
-    plt.savefig('neural_network.png')
-
-    # Show the image
-    img = plt.imread('neural_network.png')
-    plt.imshow(img)
-    plt.axis('off')
-    plt.show()
+    # Call the function with your layer sizes
+    hidden_layers = [nodes] * (num_layers - 1)
+    draw_neural_net([14] + hidden_layers + [1])
 
     # Visualize error using matplotlib
     st.write('error rate was calculate by mean squared error (MSE) and the error rate is the average of all the MSE') 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(pd.read_csv('error.csv')['Error'], 'r', label='Error Rate')
     ax.set_title('Error Rate')
     ax.set_xlabel('Epochs')
