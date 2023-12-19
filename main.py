@@ -62,6 +62,7 @@ print(np.unique(Y))
 
 st.title('My Neural Network')
 st.subheader('Hello')
+st.image("https://img.mit.edu/files/images/202211/MIT-Neural-Networks-SL.gif")
 st.write('''
 ## What is Neural Network ?
 
@@ -316,3 +317,4 @@ if st.button('Start'):
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time} seconds")
+    st.subheader('Execution time: ' + str(execution_time) + ' seconds')
