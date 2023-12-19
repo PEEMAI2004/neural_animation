@@ -1,17 +1,16 @@
 from neural_network import *
+import csv
+import time
 import numpy as np
 import pandas as pd
-import streamlit as st
-from streamlit_echarts import st_echarts
-import csv
-import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
-from pyecharts import options as opts
-from pyecharts.charts import HeatMap
-import time
 import networkx as nx
+import streamlit as st
 import matplotlib.pyplot as plt
+from pyecharts.charts import HeatMap
+from pyecharts import options as opts
+from streamlit_echarts import st_echarts
+
 
 def draw_neural_net(layer_sizes):
     '''
